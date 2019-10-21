@@ -1,0 +1,149 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <canvas width="1920px" height="220px" id="led-board">
+        </canvas>
+        <script type="text/javascript">
+            const ROW_COUNT = 9;
+            const COL_COUNT = 50;
+            var canvas = document.getElementById("led-board");
+            var ctx = canvas.getContext("2d");
+            // going to make LED colorful, adding more color
+            var colors = ["red", "blue", "green"];//, "yellow", "pink", "black"]; // don't know much color names
+            var drawLed = function(ctx, row, col, on) {
+                ctx.beginPath();
+                ctx.arc(col * 23 + 10, row * 23 + 10, 10, 0, 2 * Math.PI);
+                // ctx.rect(col * 23, row * 23, 20, 20);
+                if (on) {
+                    ctx.fillStyle=colors[Math.floor(Math.random() * colors.length)];
+                }else{
+                    ctx.fillStyle="gray";
+                }
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle="gray";
+                ctx.stroke();
+            }
+
+            var drawBoard = function() {
+                for(var row = 0; row < ROW_COUNT; row++) {
+                    //var ledOn = false;
+                    for (var col = 0; col < COL_COUNT; col++){
+                        //ledOn = !ledOn;
+                        // make all led on
+                        drawLed(ctx, row, col, true);
+                    }
+                }
+            }
+
+            // today, we will do fill the board horizontally and vertically
+
+            // today, we are going to fill this vertically
+            var currentRow = 0;
+            var currentCol = -1;
+            var drawRow = function(row, on) {
+                for(var col = 0; col < COL_COUNT; col++) {
+                    drawLed(ctx, row, col, on);
+                }
+            }
+            var drawCol = function(col, on) {
+                for(var row = 0; row < ROW_COUNT; row++) {
+                    drawLed(ctx, row, col, on);
+                }
+            }
+            var cleanBoard = function() {
+                for(var row = 0; row < ROW_COUNT; row++) {
+                    drawRow(row, false); //clean it
+                }
+            }
+            var drawBoardHorizontally = function() {
+                if (currentRow == ROW_COUNT) {
+                    currentRow = 0;
+                    cleanBoard();
+                    return;
+                }
+                drawRow(currentRow, true); // draw the row
+                currentRow++;
+            }
+            var backward=false;
+            var drawBoardVerticallyForward = function() {
+                if (currentCol == COL_COUNT) {
+                    currentCol = COL_COUNT - 1;
+                    backward = true;
+                    cleanBoard();
+                    return;
+                }
+                drawCol(currentCol, true);
+                currentCol++;
+            }
+            var drawBoardVerticallyBackward = function() {
+                if (currentCol < 0) {
+                    currentCol = 0;
+                    backward = false;
+                    cleanBoard();
+                    return;
+                }
+                drawCol(currentCol, true);
+                currentCol--;
+            }
+
+            var drawBoardVertically = function() {
+                if (backward) {
+                    drawBoardVerticallyBackward();
+                }else{
+                    drawBoardVerticallyForward();
+                }
+            }
+
+            var drawDiagonalLine = function(col) {
+                for(var row = 0; row < ROW_COUNT; row++) {
+                    col = currentCol - row;
+                    if (col < 0) {
+                        continue; // no drawing
+                    }
+                    if (col >= COL_COUNT) {
+                        continue;
+                    }
+                    drawLed(ctx, row, col, true);
+                }
+            }
+
+            var drawDiagonalLineForward = function() {
+                if (currentCol > COL_COUNT + ROW_COUNT) {
+                    currentCol = COL_COUNT + ROW_COUNT;
+                    backward = true;
+                    cleanBoard();
+                    return;
+                }
+                drawDiagonalLine(currentCol);
+                currentCol++;
+            }
+
+            var drawDiagonalLineBackward = function() {
+                if (currentCol < 0) {
+                    currentCol = 0;
+                    backward = false;
+                    cleanBoard();
+                    return;
+                }
+                drawDiagonalLine(currentCol);
+                currentCol--;
+            }
+
+            var drawBoardDiagonally = function() {
+                if (backward) {
+                    drawDiagonalLineBackward();
+                }else{
+                    drawDiagonalLineForward();
+                }
+            }
+
+            cleanBoard();
+            //setInterval(drawBoardHorizontally, 100);
+            setInterval(drawBoardDiagonally, 50);
+            // Today, we are going to do diagonal rendering
+
+        </script>
+    </body>
+</html>
