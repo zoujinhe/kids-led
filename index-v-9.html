@@ -1,0 +1,381 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <canvas width="1920px" height="220px" id="led-board">
+        </canvas>
+        <script type="text/javascript">
+            const ROW_COUNT = 9;
+            const COL_COUNT = 50;
+            var canvas = document.getElementById("led-board");
+            var ctx = canvas.getContext("2d");
+            // going to make LED colorful, adding more color
+            var colors = ["red"];//, "blue", "green"];//, "yellow", "pink", "black"]; // don't know much color names
+            var drawLed = function(ctx, row, col, on) {
+                ctx.beginPath();
+                ctx.arc(col * 23 + 10, row * 23 + 10, 10, 0, 2 * Math.PI);
+                // ctx.rect(col * 23, row * 23, 20, 20);
+                if (on) {
+                    ctx.fillStyle=colors[Math.floor(Math.random() * colors.length)];
+                }else{
+                    ctx.fillStyle="gray";
+                }
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle="gray";
+                ctx.stroke();
+            }
+
+            var drawBoard = function() {
+                for(var row = 0; row < ROW_COUNT; row++) {
+                    //var ledOn = false;
+                    for (var col = 0; col < COL_COUNT; col++){
+                        //ledOn = !ledOn;
+                        // make all led on
+                        drawLed(ctx, row, col, true);
+                    }
+                }
+            }
+
+            // today, we will do fill the board horizontally and vertically
+
+            // today, we are going to fill this vertically
+            var currentRow = 0;
+            var currentCol = -1;
+            var drawRow = function(row, on) {
+                for(var col = 0; col < COL_COUNT; col++) {
+                    drawLed(ctx, row, col, on);
+                }
+            }
+            var drawCol = function(col, on) {
+                for(var row = 0; row < ROW_COUNT; row++) {
+                    drawLed(ctx, row, col, on);
+                }
+            }
+            var cleanBoard = function() {
+                for(var row = 0; row < ROW_COUNT; row++) {
+                    drawRow(row, false); //clean it
+                }
+            }
+            var drawBoardHorizontally = function() {
+                if (currentRow == ROW_COUNT) {
+                    currentRow = 0;
+                    cleanBoard();
+                    return;
+                }
+                drawRow(currentRow, true); // draw the row
+                currentRow++;
+            }
+            var backward=false;
+            var drawBoardVerticallyForward = function() {
+                if (currentCol == COL_COUNT) {
+                    currentCol = COL_COUNT - 1;
+                    backward = true;
+                    cleanBoard();
+                    return;
+                }
+                drawCol(currentCol, true);
+                currentCol++;
+            }
+            var drawBoardVerticallyBackward = function() {
+                if (currentCol < 0) {
+                    currentCol = 0;
+                    backward = false;
+                    cleanBoard();
+                    return;
+                }
+                drawCol(currentCol, true);
+                currentCol--;
+            }
+
+            // var drawBoardVertically = function() {
+            //     if (backward) {
+            //         drawBoardVerticallyBackward();
+            //     }else{
+            //         drawBoardVerticallyForward();
+            //     }
+            // }
+
+            var drawDiagonalLine = function(col) {
+                for(var row = 0; row < ROW_COUNT; row++) {
+                    col = currentCol - row;
+                    if (col < 0) {
+                        continue; // no drawing
+                    }
+                    if (col >= COL_COUNT) {
+                        continue;
+                    }
+                    drawLed(ctx, row, col, true);
+                }
+            }
+
+            var drawDiagonalLineForward = function() {
+                if (currentCol > COL_COUNT + ROW_COUNT) {
+                    currentCol = COL_COUNT + ROW_COUNT;
+                    backward = true;
+                    cleanBoard();
+                    return;
+                }
+                drawDiagonalLine(currentCol);
+                currentCol++;
+            }
+
+            var drawDiagonalLineBackward = function() {
+                if (currentCol < 0) {
+                    currentCol = 0;
+                    backward = false;
+                    cleanBoard();
+                    return;
+                }
+                drawDiagonalLine(currentCol);
+                currentCol--;
+            }
+
+            var drawBoardDiagonally = function() {
+                if (backward) {
+                    drawDiagonalLineBackward();
+                }else{
+                    drawDiagonalLineForward();
+                }
+            }
+
+            // today, we are going to draw LED vertically toward center, or draw from center to both side
+            var drawLedVerticallyToCenter = function() {
+                if (currentCol > COL_COUNT / 2 - 2) {
+                    currentCol = COL_COUNT / 2; // 25
+                    backward=true;
+                    //cleanBoard();
+                    return;
+                }
+                currentCol++;
+                drawCol(currentCol, true);  // draw left column
+                // 50 - 0 - 1 = 49
+                drawCol(COL_COUNT - currentCol - 1, true);  // draw right column
+            }
+
+            var drawLedVerticallyFromCetner = function() {
+                if (currentCol < 0) {
+                    currentCol = -1;
+                    backward=false;
+                    //cleanBoard();
+                    return;
+                }
+                currentCol--; // frist will be 24
+                drawCol(currentCol, false); // clean
+                drawCol(COL_COUNT - currentCol - 2, false); // clean
+            }
+
+            var drawBoardVertically = function() {
+                if (backward) {
+                    drawLedVerticallyFromCetner();
+                }else{
+                    drawLedVerticallyToCenter();
+                }
+            }
+
+            var currentCircle = 0; // circle number
+            var circleCount = ROW_COUNT / 2 + 1;
+            var side = 0; // 0 north, 1 east, 2 south, 3 west
+            var sideStep = 0;
+            var doneCircleDraw = false; // done whole board drawing?
+            var drewLedCount = 0; // how many LED have been drew
+            // function that check we have drew whole board
+            var doneCircleDrawCheck = function() {
+                drewLedCount++;
+                if (drewLedCount == ROW_COUNT * COL_COUNT) {
+                    doneCircleDraw = true;
+                }
+            }
+
+            var drawBoardCircular = function() {
+                if (doneCircleDraw) {
+                    cleanBoard();
+                    doneCircleDraw = false;
+                    drewLedCount = 0;
+                    currentCircle = 0;
+                    sideStep = 0;
+                    side = 0;
+                    return;
+                }
+                // north
+                if (side == 0) {
+                    if (sideStep < COL_COUNT - (2 * currentCircle) - 1) {
+                        drawLed(ctx, currentCircle, sideStep + currentCircle, true);
+                        doneCircleDrawCheck();
+                        sideStep++;
+                    }
+                    if (sideStep == COL_COUNT - (2 * currentCircle) - 1) {
+                        sideStep = 0; 
+                        side = 1; //start to draw east
+                    }
+                    return;
+                }
+                // east
+                if (side == 1) {
+                    if (sideStep < ROW_COUNT - (2 * currentCircle) - 1) {
+                        drawLed(ctx, currentCircle + sideStep, COL_COUNT - currentCircle - 1, true);
+                        doneCircleDrawCheck();
+                        sideStep++;
+                    }
+                    if (sideStep == ROW_COUNT - (2 * currentCircle) - 1) {
+                        sideStep = 0;
+                        side = 2; // start to draw south
+                    }
+                    return;
+                }
+                // south
+                if (side == 2) {
+                    if (sideStep < COL_COUNT - (2 * currentCircle) - 1) {
+                        drawLed(ctx, ROW_COUNT - currentCircle - 1, COL_COUNT - currentCircle - sideStep - 1, true);
+                        doneCircleDrawCheck();
+                        sideStep++;
+                    }
+                    if (sideStep == COL_COUNT - (2 * currentCircle) - 1) {
+                        sideStep = 0;
+                        side = 3; //start to draw east
+                    }
+                    return;
+                }
+                // west
+                if (side == 3) {
+                    if (sideStep < ROW_COUNT - (2 * currentCircle) - 1) {
+                        drawLed(ctx, ROW_COUNT - currentCircle - sideStep - 1, currentCircle, true);
+                        doneCircleDrawCheck();
+                        sideStep++;
+                    }
+                    if (sideStep == ROW_COUNT - (2 * currentCircle) - 1) {
+                        sideStep = 0;
+                        side = 0; // start to draw east
+                        currentCircle++;
+                    }
+                    return;
+                }
+            }
+
+            cleanBoard();
+            //setInterval(drawBoardHorizontally, 100);
+            //setInterval(drawBoardCircular, 50);
+            // Today, we are going to do diagonal rendering
+
+            var letterK = 
+                "0000000" +
+                "0100010" +
+                "0100010" +
+                "0100100" +
+                "0111000" +
+                "0100100" +
+                "0100010" +
+                "0100010" +
+                "0000000"; // 9 rows, 7 column for single letter, 1: on, 0: off
+            var letterI = 
+                "0000000" +
+                "0011100" +
+                "0001000" +
+                "0001000" +
+                "0001000" +
+                "0001000" +
+                "0001000" +
+                "0011100" +
+                "0000000";
+            var letterD = 
+                "0000000" +
+                "0111100" +
+                "0100010" +
+                "0100010" +
+                "0100010" +
+                "0100010" +
+                "0100010" +
+                "0111100" +
+                "0000000";
+            var letterL = 
+                "0000000" + 
+                "0100000" + 
+                "0100000" + 
+                "0100000" + 
+                "0100000" + 
+                "0100000" + 
+                "0100000" + 
+                "0111110" + 
+                "0000000";
+            var letterE = 
+                "0000000" +
+                "0111110" +
+                "0100000" +
+                "0100000" +
+                "0111100" +
+                "0100000" +
+                "0100000" +
+                "0111110" +
+                "0000000";
+            var letterSpace = 
+                "0000000" +
+                "0000000" +
+                "0000000" +
+                "0000000" +
+                "0000000" +
+                "0000000" +
+                "0000000" +
+                "0000000" +
+                "0000000";
+            var letterMap = new Map();
+            letterMap.set("K", letterK);
+            letterMap.set("I", letterI);
+            letterMap.set("D", letterD);
+            letterMap.set(" ", letterSpace);
+            letterMap.set("L", letterL);
+            letterMap.set("E", letterE);
+            letterMap.set("D", letterD);
+            
+            var sentence = "KID LED";
+            
+            var drawLetter = function(letter, offset) {
+                var idx = -1;
+                for(var row = 0; row < 9; row++) {
+                    for(var col = 0; col < 7; col++) {
+                        idx++;
+                        var ledOnOff = letterMap.get(letter + "").charAt(idx) == "1";
+                        if (col + offset >= 0 && col + offset < COL_COUNT) {
+                            drawLed(ctx, row, col + offset, ledOnOff);
+                        }
+                    }
+                }
+            }
+
+            var sentenceIndex = -1;
+            var drawSentence = function() {
+                sentenceIndex++;
+                if (sentenceIndex == sentence.length) {
+                    cleanBoard();
+                    sentenceIndex = -1;
+                    return;
+                }
+                drawLetter(sentence.charAt(sentenceIndex), sentenceIndex * 7);
+            }
+
+
+            // sentence moving from left to right
+            const LETTER_WIDTH = 7;
+            var leftOffSet = COL_COUNT;
+            
+            var movingSentenceLeftToRight = function() {
+                cleanBoard();
+                if (leftOffSet == COL_COUNT) {
+                    leftOffSet = 0 - sentence.length * LETTER_WIDTH;
+                    return;
+                }
+
+                var left = leftOffSet;
+                for (var i = 0; i < sentence.length; i++) {
+                    //console.log(sentence.charAt(i), left);
+                    drawLetter(sentence.charAt(i), left);
+                    left += LETTER_WIDTH;
+                }
+
+                leftOffSet++;
+            }
+
+            setInterval(movingSentenceLeftToRight, 100);
+
+        </script>
+    </body>
+</html>
